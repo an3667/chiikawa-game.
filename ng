@@ -1,0 +1,393 @@
+# ==================================================
+# Game: Chiikawa Đuổi Lấy Túi Bị Mất
+# Phiên bản: Có 3 màn hình đồ họa Chiikawa
+# Sinh viên: _______________
+# Lớp: _______________
+# ==================================================
+
+import pygame
+import sys
+import random
+
+# === Khởi tạo Pygame ===
+pygame.init()
+
+# === Cấu hình màn hình ===
+CHIEU_RONG = 900
+CHIEU_CAO = 600
+man_hanh = pygame.display.set_mode((CHIEU_RONG, CHIEU_CAO))
+pygame.display.set_caption("💛 CHIIKAWA - Đuổi Lấy Túi Bị Mất 💛")
+
+# === Màu sắc dễ thương ===
+TRANG = (255, 255, 255)
+XANH_NHE = (204, 255, 255)
+VANG_NHE = (255, 255, 204)
+HONG_NHE = (255, 229, 242)
+XANH_LA = (153, 255, 153)
+XANH_DAM = (51, 153, 51)
+NAU = (139, 69, 19)
+XAM = (153, 153, 153)
+XANH_TRAI = (102, 204, 255)
+VANG = (255, 215, 0)
+DO_NHE = (255, 102, 102)
+
+# === Tốc độ ===
+TOC_DO_CO_BAN = 5
+TOC_DO_KHO = 9
+
+# === Trạng thái game ===
+MAN_HINH_MO_DAU = 0
+SANH_CHO = 1
+CHON_NHAN_VAT = 2
+DANG_CHOI = 3
+KET_THUC = 4
+trang_thai = MAN_HINH_MO_DAU
+cap_do = "de"
+diem = 0
+diem_tang_kho = 5
+
+# === 3 NHÂN VẬT GIỐNG HỆT HÌNH ===
+danh_sach_nv = [
+    {
+        "ten": "Chiikawa",
+        "mau_than": (255, 255, 204),
+        "mau_tai": (255, 255, 180),
+        "loai_mat": "nham_mat",
+        "co_no": False
+    },
+    {
+        "ten": "Usagi",
+        "mau_than": (255, 245, 210),
+        "mau_tai": (255, 220, 200),
+        "loai_mat": "mo_mat",
+        "co_no": False
+    },
+    {
+        "ten": "Hachiware",
+        "mau_than": (230, 240, 255),
+        "mau_tai": (153, 204, 255),
+        "loai_mat": "mo_mat",
+        "co_no": True
+    }
+]
+nv_chon = 0
+
+# === Thông tin nhân vật chơi ===
+nv_rong = 60
+nv_cao = 70
+nv_x = 100
+nv_y = CHIEU_CAO - nv_cao - 75
+van_toc_y = 0
+trong_luc = 0.7
+toc_do_nhay_de = 12
+toc_do_nhay_kho = 14
+dang_dat = True
+
+# === Chướng ngại vật ===
+cnv_rong = 55
+cnv_cao = 65
+cnv_x = CHIEU_RONG
+cnv_y = CHIEU_CAO - cnv_cao - 75
+danh_sach_cnv = ["nấm", "cây", "đá", "hoa", "cục đá"]
+
+# === Kẻ trộm túi vàng ===
+ke_trom_x = CHIEU_RONG - 130
+ke_trom_y = 90
+buoc_chay = 0
+
+# === Font chữ ===
+font_lon = pygame.font.Font(None, 56)
+font_vua = pygame.font.Font(None, 40)
+font_nho = pygame.font.Font(None, 30)
+dong_ho = pygame.time.Clock()
+
+# === Âm thanh thua ===
+def tao_am_thanh_thua():
+    try:
+        return pygame.mixer.Sound(buffer=bytes([
+            128, 120, 112, 104, 96, 88, 80, 72, 64, 72, 80, 88, 96, 104, 112, 120,
+            128, 136, 144, 152, 160, 152, 144, 136, 128, 120, 112, 104, 96, 88, 80, 72,
+            64, 56, 48, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 120, 112,
+            104, 96, 88, 80, 72, 64, 56, 48, 40, 32, 40, 48, 56, 64, 72, 80, 88, 96,
+            104, 112, 120, 128, 120, 112, 104, 96, 88, 80, 72, 64, 56, 48, 40, 32,
+            24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 120, 112,
+            104, 96, 88, 80, 72, 64, 56, 48, 40, 32, 24, 16, 24, 32, 40, 48, 56, 64
+        ]))
+    except:
+        return None
+
+am_thanh_thua = tao_am_thanh_thua()
+
+# === VẼ NHÂN VẬT GIỐNG HỆT HÌNH ===
+def ve_chiikawa(x, y, thong_tin, kich_thuoc=1.0):
+    k = kich_thuoc
+    tt = thong_tin
+
+    pygame.draw.ellipse(man_hanh, tt["mau_than"], (int(x+5*k), int(y+22*k), int(50*k), int(48*k)))
+    pygame.draw.circle(man_hanh, tt["mau_than"], (int(x+30*k), int(y+22*k)), int(28*k))
+
+    if tt["ten"] == "Usagi":
+        pygame.draw.ellipse(man_hanh, tt["mau_tai"], (int(x+8*k), int(y-18*k), int(11*k), int(35*k)))
+        pygame.draw.ellipse(man_hanh, tt["mau_tai"], (int(x+40*k), int(y-18*k), int(11*k), int(35*k)))
+        pygame.draw.ellipse(man_hanh, (255, 180, 180), (int(x+10*k), int(y-12*k), int(7*k), int(15*k)))
+        pygame.draw.ellipse(man_hanh, (255, 180, 180), (int(x+42*k), int(y-12*k), int(7*k), int(15*k)))
+    else:
+        pygame.draw.ellipse(man_hanh, tt["mau_tai"], (int(x+4*k), int(y+6*k), int(16*k), int(20*k)))
+        pygame.draw.ellipse(man_hanh, tt["mau_tai"], (int(x+40*k), int(y+6*k), int(16*k), int(20*k)))
+
+    if tt["co_no"]:
+        pygame.draw.polygon(man_hanh, XANH_TRAI, [
+            (int(x+10*k), int(y+3*k)),
+            (int(x+2*k), int(y+14*k)),
+            (int(x+16*k), int(y+16*k))
+        ])
+        pygame.draw.polygon(man_hanh, XANH_TRAI, [
+            (int(x+44*k), int(y+3*k)),
+            (int(x+54*k), int(y+14*k)),
+            (int(x+38*k), int(y+16*k))
+        ])
+
+    if tt["loai_mat"] == "nham_mat":
+        pygame.draw.arc(man_hanh, (0,0,0), (int(x+12*k), int(y+16*k), int(12*k), int(7*k)), 3.14, 6.28, 3)
+        pygame.draw.arc(man_hanh, (0,0,0), (int(x+34*k), int(y+16*k), int(12*k), int(7*k)), 3.14, 6.28, 3)
+    else:
+        pygame.draw.circle(man_hanh, (0,0,0), (int(x+18*k), int(y+20*k)), int(4*k))
+        pygame.draw.circle(man_hanh, (0,0,0), (int(x+38*k), int(y+20*k)), int(4*k))
+        pygame.draw.circle(man_hanh, TRANG, (int(x+16*k), int(y+18*k)), int(1.5*k))
+        pygame.draw.circle(man_hanh, TRANG, (int(x+36*k), int(y+18*k)), int(1.5*k))
+
+    pygame.draw.circle(man_hanh, (255, 153, 153), (int(x+10*k), int(y+28*k)), int(6*k))
+    pygame.draw.circle(man_hanh, (255, 153, 153), (int(x+50*k), int(y+28*k)), int(6*k))
+
+    if tt["loai_mat"] == "nham_mat":
+        pygame.draw.arc(man_hanh, (100,100,100), (int(x+20*k), int(y+32*k), int(20*k), int(12*k)), 3.14, 6.28, 2)
+        pygame.draw.line(man_hanh, (255,255,255), (int(x+28*k), int(y+38*k)), (int(x+32*k), int(y+38*k)), 2)
+    else:
+        pygame.draw.arc(man_hanh, (100,100,100), (int(x+22*k), int(y+34*k), int(16*k), int(9*k)), 3.14, 6.28, 2)
+
+# === VẼ KẺ TRỘM TÚI VÀNG ===
+def ve_ke_trom(x, y, buoc):
+    pygame.draw.ellipse(man_hanh, (60,60,60), (x, y+12, 45, 50))
+    pygame.draw.circle(man_hanh, (60,60,60), (x+22, y+15), 20)
+    pygame.draw.rect(man_hanh, (40,40,40), (x+5, y+10, 35, 10))
+    pygame.draw.polygon(man_hanh, VANG, [(x+38, y+10), (x+60, y+25), (x+40, y+40)])
+    pygame.draw.ellipse(man_hanh, (220,180,0), (x+42, y+18, 12, 8))
+    if buoc % 2 == 0:
+        pygame.draw.line(man_hanh, (60,60,60), (x+15, y+55), (x+5, y+72), 5)
+        pygame.draw.line(man_hanh, (60,60,60), (x+30, y+55), (x+40, y+72), 5)
+    else:
+        pygame.draw.line(man_hanh, (60,60,60), (x+15, y+55), (x+28, y+72), 5)
+        pygame.draw.line(man_hanh, (60,60,60), (x+30, y+55), (x+17, y+72), 5)
+
+# === BỐI CẢNH DỄ THƯƠNG ===
+def ve_boi_canh():
+    man_hanh.fill(XANH_NHE)
+    vi_tri_may = [(120, 70), (380, 50), (630, 80), (800, 45)]
+    for mx, my in vi_tri_may:
+        pygame.draw.circle(man_hanh, TRANG, (mx, my), 32)
+        pygame.draw.circle(man_hanh, TRANG, (mx+35, my-6), 25)
+        pygame.draw.circle(man_hanh, TRANG, (mx+60, my), 30)
+    pygame.draw.ellipse(man_hanh, XANH_LA, (-60, CHIEU_CAO-110, 320, 110))
+    pygame.draw.ellipse(man_hanh, XANH_LA, (350, CHIEU_CAO-90, 380, 90))
+    pygame.draw.rect(man_hanh, XANH_DAM, (0, CHIEU_CAO - 55, CHIEU_RONG, 55))
+    for i in range(14):
+        hx = 50 + i * 65
+        hy = CHIEU_CAO - 60
+        pygame.draw.circle(man_hanh, HONG_NHE, (hx, hy), 7)
+        pygame.draw.circle(man_hanh, VANG, (hx, hy), 4)
+
+# === VẼ CHƯỞNG NGẠI VẬT ===
+def ve_cnv(x, y, loai):
+    if loai == "nấm":
+        pygame.draw.rect(man_hanh, (255,204,153), (x+20, y+35, 16, 32))
+        pygame.draw.arc(man_hanh, DO_NHE, (x, y, 55, 38), 3.14, 0, 0)
+        pygame.draw.circle(man_hanh, TRANG, (x+18, y+14), 6)
+        pygame.draw.circle(man_hanh, TRANG, (x+38, y+11), 5)
+    elif loai == "cây":
+        pygame.draw.rect(man_hanh, NAU, (x+20, y+38, 16, 28))
+        pygame.draw.polygon(man_hanh, XANH_DAM, [(x+28, y), (x, y+42), (x+56, y+42)])
+    elif loai == "hoa":
+        pygame.draw.rect(man_hanh, XANH_DAM, (x+24, y+32, 7, 35))
+        pygame.draw.circle(man_hanh, HONG_NHE, (x+27, y+22), 15)
+        pygame.draw.circle(man_hanh, VANG, (x+27, y+22), 8)
+    else:
+        pygame.draw.ellipse(man_hanh, XAM, (x, y+20, 55, 45))
+
+# === VẼ 3 NHÂN VẬT TRÊN MỘT DÒNG ===
+def ve_3_nhan_vat(x, y, kich_thuoc=1.0):
+    khoang_cach = int(70 * kich_thuoc)
+    ve_chiikawa(x, y, danh_sach_nv[0], kich_thuoc)
+    ve_chiikawa(x + khoang_cach, y, danh_sach_nv[1], kich_thuoc)
+    ve_chiikawa(x + khoang_cach * 2, y, danh_sach_nv[2], kich_thuoc)
+
+# === RESET TRÒ CHƠI ===
+def reset_game():
+    global nv_y, van_toc_y, dang_dat, cnv_x, diem, cap_do, buoc_chay
+    nv_y = CHIEU_CAO - nv_cao - 75
+    van_toc_y = 0
+    dang_dat = True
+    cnv_x = CHIEU_RONG
+    diem = 0
+    cap_do = "de"
+    buoc_chay = 0
+
+# === VÒNG LẶP CHÍNH ===
+dang_chay = True
+cnv_loai = random.choice(danh_sach_cnv)
+
+while dang_chay:
+    # ========== MÀN HÌNH MỞ ĐẦU ==========
+    if trang_thai == MAN_HINH_MO_DAU:
+        ve_boi_canh()
+        
+        t1 = font_lon.render("😱 TÚI VÀNG BỊ TRỘM RỒI!", True, (153, 0, 0))
+        t2 = font_vua.render("Kẻ xấu đã lấy mất túi vàng → Đuổi theo ngay!", True, (102, 51, 0))
+        t3 = font_nho.render("Nhấn SPACE để bắt đầu truy đuổi!", True, (60,60,60))
+        
+        man_hanh.blit(t1, (CHIEU_RONG//2 - t1.get_width()//2, 80))
+        man_hanh.blit(t2, (CHIEU_RONG//2 - t2.get_width()//2, 160))
+        man_hanh.blit(t3, (CHIEU_RONG//2 - t3.get_width()//2, 250))
+
+        # === 3 MÀN HÌNH: Màn hình mở đầu có 3 nhân vật Chiikawa ===
+        ve_3_nhan_vat(CHIEU_RONG//2 - 105, 350, 1.1)
+        
+        ve_ke_trom(CHIEU_RONG - 160, 100, buoc_chay)
+        buoc_chay += 1
+
+        for su_kien in pygame.event.get():
+            if su_kien.type == pygame.QUIT: dang_chay = False
+            if su_kien.type == pygame.KEYDOWN and su_kien.key == pygame.K_SPACE:
+                trang_thai = SANH_CHO
+
+    # ========== SẢNH CHỜ ==========
+    elif trang_thai == SANH_CHO:
+        ve_boi_canh()
+        
+        t1 = font_lon.render("🏃 TRUY ĐUỔI KẺ TRỘM TÚI VÀNG 🏃", True, (102, 51, 0))
+        t2 = font_vua.render(f"Nhân vật: {danh_sach_nv[nv_chon]['ten']}", True, (0,100,0))
+        t3 = font_nho.render("SPACE=Chơi | C=Đổi nhân vật | D=Đổi cấp độ", True, (60,60,60))
+        t4 = font_nho.render(f"Cấp độ: {'🟢 Dễ (tốc độ ' + str(TOC_DO_CO_BAN) + ')' if cap_do=='de' else '🔴 Khó (tốc độ ' + str(TOC_DO_KHO) + ')'}", True, (102, 51, 0))
+        
+        man_hanh.blit(t1, (CHIEU_RONG//2 - t1.get_width()//2, 60))
+        man_hanh.blit(t2, (CHIEU_RONG//2 - t2.get_width()//2, 150))
+        man_hanh.blit(t3, (CHIEU_RONG//2 - t3.get_width()//2, 400))
+        man_hanh.blit(t4, (CHIEU_RONG//2 - t4.get_width()//2, 440))
+
+        # === 3 MÀN HÌNH: Sảnh chờ có Chiikawa lớn ===
+        ve_chiikawa(CHIEU_RONG//2 - 35, 220, danh_sach_nv[nv_chon], 1.4)
+
+        for su_kien in pygame.event.get():
+            if su_kien.type == pygame.QUIT: dang_chay = False
+            if su_kien.type == pygame.KEYDOWN:
+                if su_kien.key == pygame.K_SPACE:
+                    reset_game()
+                    trang_thai = DANG_CHOI
+                if su_kien.key == pygame.K_c:
+                    trang_thai = CHON_NHAN_VAT
+                if su_kien.key == pygame.K_d:
+                    cap_do = "kho" if cap_do == "de" else "de"
+
+    # ========== CHỌN NHÂN VẬT ==========
+    elif trang_thai == CHON_NHAN_VAT:
+        ve_boi_canh()
+        
+        t1 = font_vua.render("👫 CHỌN NGƯỜI ĐI ĐUỔI — 3 nhân vật chính xác", True, (102, 51, 0))
+        t2 = font_nho.render("← → để đổi | SPACE để xác nhận", True, (60,60,60))
+        
+        man_hanh.blit(t1, (CHIEU_RONG//2 - t1.get_width()//2, 40))
+        man_hanh.blit(t2, (CHIEU_RONG//2 - t2.get_width()//2, 480))
+        
+        vi_tri = [70, 370, 670]
+        for i in range(3):
+            mau_vien = VANG if i == nv_chon else (200,200,200)
+            pygame.draw.rect(man_hanh, mau_vien, (vi_tri[i]-15, 130, 200, 300), 4)
+            ve_chiikawa(vi_tri[i]+30, 170, danh_sach_nv[i], 1.2)
+            ten_nv = font_nho.render(danh_sach_nv[i]["ten"], True, (50,50,50))
+            man_hanh.blit(ten_nv, (vi_tri[i]+70, 400))
+
+        for su_kien in pygame.event.get():
+            if su_kien.type == pygame.QUIT: dang_chay = False
+            if su_kien.type == pygame.KEYDOWN:
+                if su_kien.key == pygame.K_LEFT:
+                    nv_chon = (nv_chon - 1) % 3
+                if su_kien.key == pygame.K_RIGHT:
+                    nv_chon = (nv_chon + 1) % 3
+                if su_kien.key == pygame.K_SPACE:
+                    trang_thai = SANH_CHO
+
+    # ========== ĐANG CHƠI ==========
+    elif trang_thai == DANG_CHOI:
+        toc_do_chay = TOC_DO_CO_BAN if cap_do == "de" else TOC_DO_KHO
+        toc_do_nhay = toc_do_nhay_de if cap_do == "de" else toc_do_nhay_kho
+
+        for su_kien in pygame.event.get():
+            if su_kien.type == pygame.QUIT: dang_chay = False
+            if su_kien.type == pygame.KEYDOWN:
+                if su_kien.key == pygame.K_SPACE and dang_dat:
+                    van_toc_y = -toc_do_nhay
+                    dang_dat = False
+
+        van_toc_y += trong_luc
+        nv_y += van_toc_y
+        if nv_y >= CHIEU_CAO - nv_cao - 75:
+            nv_y = CHIEU_CAO - nv_cao - 75
+            van_toc_y = 0
+            dang_dat = True
+
+        cnv_x -= toc_do_chay
+        if cnv_x < -cnv_rong:
+            cnv_x = CHIEU_RONG + random.randint(120, 380)
+            cnv_loai = random.choice(danh_sach_cnv)
+            diem += 1
+            if diem >= diem_tang_kho and cap_do == "de":
+                cap_do = "kho"
+
+        hop_nv = pygame.Rect(nv_x+15, nv_y+15, nv_rong-30, nv_cao-25)
+        hop_cnv = pygame.Rect(cnv_x+10, cnv_y+10, cnv_rong-20, cnv_cao-20)
+        if hop_nv.colliderect(hop_cnv):
+            if am_thanh_thua:
+                am_thanh_thua.play()
+            trang_thai = KET_THUC
+
+        ve_boi_canh()
+        ve_ke_trom(ke_trom_x, ke_trom_y, buoc_chay)
+        buoc_chay += 1
+        ve_cnv(cnv_x, cnv_y, cnv_loai)
+        ve_chiikawa(nv_x, nv_y, danh_sach_nv[nv_chon], 1.0)
+
+        t_diem = font_vua.render(f"💛 Điểm: {diem}", True, (102, 51, 0))
+        t_capdo = font_nho.render(f"Cấp độ: {'Dễ' if cap_do=='de' else 'Khó'} | Tốc độ: {toc_do_chay}", True, (102, 51, 0))
+        t_ten = font_nho.render(f"Nhân vật: {danh_sach_nv[nv_chon]['ten']}", True, (102, 51, 0))
+        man_hanh.blit(t_diem, (15, 10))
+        man_hanh.blit(t_capdo, (15, 50))
+        man_hanh.blit(t_ten, (15, 85))
+
+    # ========== KẾT THÚC ==========
+    elif trang_thai == KET_THUC:
+        ve_boi_canh()
+        
+        t1 = font_lon.render("💔 Bị ngăn cản rồi! Không đuổi kịp!", True, (204, 0, 0))
+        t2 = font_vua.render(f"Tổng điểm đạt được: {diem}", True, (102, 51, 0))
+        t3 = font_nho.render("SPACE=Chơi lại từ đầu | Q=Thoát", True, (60,60,60))
+        
+        man_hanh.blit(t1, (CHIEU_RONG//2 - t1.get_width()//2, 100))
+        man_hanh.blit(t2, (CHIEU_RONG//2 - t2.get_width()//2, 180))
+        man_hanh.blit(t3, (CHIEU_RONG//2 - t3.get_width()//2, 300))
+
+        # === 3 MÀN HÌNH: Màn hình kết thúc có 3 nhân vật Chiikawa ===
+        ve_3_nhan_vat(CHIEU_RONG//2 - 105, 420, 1.0)
+
+        for su_kien in pygame.event.get():
+            if su_kien.type == pygame.QUIT: dang_chay = False
+            if su_kien.type == pygame.KEYDOWN:
+                if su_kien.key == pygame.K_SPACE:
+                    trang_thai = MAN_HINH_MO_DAU
+                    reset_game()
+                if su_kien.key == pygame.K_q:
+                    dang_chay = False
+
+    pygame.display.flip()
+    dong_ho.tick(60)
+
+pygame.quit()
+sys.exit()
